@@ -1,71 +1,135 @@
+
 # Docker Container Update Script
 
+## Overview
 
-This Bash script automates updating a Docker container to its latest image version while preserving its configuration. It supports two modes:
+This Bash script is a comprehensive tool for managing and safely updating Docker containers and services. It supports Docker Swarm, Dockerfile-built containers, interactive updates, and network inspection, with built-in logging, rollback support, and Compose detection.
 
-- **Default Mode**: Automatically extracts the container's settings (image, ports, volumes, restart policy, environment variables) using `docker inspect` and applies them to the updated container.
-- **Interactive Mode**: Prompts the user to manually specify the container's settings, allowing customization during the update.
+The script provides a user-friendly terminal menu and ensures all updates are performed using the safest and most Docker-compliant methods.
 
-The script displays running containers, validates inputs, and ensures data persistence by reusing volumes, making it suitable for updating containers like Portainer, MySQL, or others.
+---
 
-## Prerequisites
+## Requirements
 
-- **Docker**: Installed and running on the system.
-- **jq**: Required for parsing `docker inspect` output in Default Mode. Install it:
-  - Ubuntu/Debian: `sudo apt-get install jq`
-  - macOS: `brew install jq`
-  - Other systems: Refer to [jq documentation](https://stedolan.github.io/jq/).
+- **Docker**: Must be installed and running.
+- **jq**: JSON parser used for inspecting container configurations.
 
-## Installation
+Install jq (if missing):
 
-1. Save the script as `update_docker_container.sh`.
-2. Make it executable:
-   ```bash
-   chmod +x update_docker_container.sh
-   ```
+```bash
+sudo apt install jq
+```
+
+---
+
+## Features
+
+- **Safe Swarm updates** using `docker service update --image`
+- **Rollback support** by saving `docker inspect` JSON before changes
+- **Compose awareness**: detects and labels Docker Compose containers
+- **Dockerfile container updates** via rebuilds
+- **Interactive configuration inspection**
+- **Network mapping and visualization**
+- **Security scan** (exposed ports summary)
+- **Full update summary logging**
+- **Export of container configurations**
+
+---
 
 ## Usage
 
-Run the script:
+Make the script executable:
+
+```bash
+chmod +x update_docker_container.sh
+```
+
+Run it:
 
 ```bash
 ./update_docker_container.sh
 ```
 
-### Steps:
+---
 
-- The script displays running containers via `docker ps`.
-- Enter the name or ID of the container to update.
-- Choose a mode:
-  - 1 (Default Mode): Extracts settings from `docker inspect`.
-  - 2 (Interactive Mode): Prompts for manual input of image, ports, volumes, restart policy, and environment variables.
-- Review the displayed settings (auto-extracted or user-entered).
-- Please confirm the procedure for stopping, removing, and recreating the container.
-- Check the updated container's status with `docker ps` and access it as needed.
+## Menu Options
 
-## Features
+### 1) Safe Update (Swarm-aware)
 
-- Displays running containers for easy selection.
-- Default Mode auto-extracts configuration (image, ports, volumes, restart policy, environment variables).
-- Interactive Mode allows manual configuration input.
-- Validates the presence of Docker and jq, verifies container existence, and confirms command execution.
-- Warns about missing volumes to prevent data loss.
-- Supports any container with a valid image tag (defaults to 'latest' or an existing tag).
+- Pulls the latest image for each Swarm service.
+- Updates each service with `docker service update --image`.
+- Logs summary to `summary.log`.
+
+### 2) Dockerfile Update
+
+- Detects locally built images (`<none>` or no repository prefix).
+- Asks for Dockerfile path and rebuilds image.
+- Restarts container with same name.
+- Logs changes to `dockerupdatelog.txt`.
+
+### 3) Interactive Mode
+
+- Shows container configuration: image, ports, env, mounts.
+- Allows user to inspect or modify before manual update.
+
+### 4) Network Mapping
+
+- Lists all Docker networks.
+- Shows connected containers and their IPs.
+- Outputs to `network_map.txt`.
+
+### 5) Rollback Support
+
+- Lists saved container configurations.
+- Allows manual restore from `rollback_configs/` directory.
+
+### 6) Compose Awareness Check
+
+- Scans running containers for Compose labels.
+- Marks Compose-managed containers.
+
+### 7) Show Update Summary
+
+- Prints contents of `summary.log` (updates performed).
+
+### 8) Security Scan (basic)
+
+- Lists exposed ports for each container using `docker port`.
+
+### 9) Export Container Configs
+
+- Saves `docker inspect` output for each container to `rollback_configs/`.
+
+---
+
+## Logging and Output Files
+
+- `log.txt`: Logs updates to standard containers.
+- `dockerupdatelog.txt`: Logs Dockerfile image updates.
+- `summary.log`: Global summary of all updates.
+- `network_map.txt`: Container network connection overview.
+- `rollback_configs/`: Stores full `docker inspect` JSONs for rollback.
+
+---
 
 ## Notes
 
-- **Data Persistence**: Ensures volumes (such as `portainer_data`) are reused to preserve data. Warns if no volumes are detected.
-- **Port Conflicts**: Fails if ports are in use. Check with:
-  ```bash
-  netstat -tuln | grep <port>
-  sudo lsof -i:<port>
-  ```
-- **Docker Compose**: For Compose-managed containers, update the `docker-compose.yml` and run `docker-compose pull && docker-compose up -d` instead.
-- **Limitations**: Handles standard settings. Complex configurations (such as custom networks) may require script modifications or the use of Interactive Mode.
+- Swarm services are updated in-place (no deletion or downtime).
+- Standalone container updates are not destructive if rollback is used.
+- Docker Compose containers are detected but not updated directly — use `docker-compose pull && up -d` manually.
 
-## Troubleshooting
+---
 
-- **Port Conflicts**: Resolve by freeing the port or selecting an alternative one.
-- **Missing jq**: Install jq if Default Mode fails.
-- **Data Loss**: Ensure volumes are specified to prevent data loss.
-- **Errors**: Check error messages and verify container status with `docker ps -a`.
+## Future Enhancements
+
+- Automated rollback execution
+- Image digest/version comparison
+- Email or webhook alerts
+- YAML export support
+- Automated scheduling via cron
+
+---
+
+## License
+
+MIT License. Modify and use freely with proper safety precautions.
