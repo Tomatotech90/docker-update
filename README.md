@@ -115,7 +115,7 @@ Run it:
 ## Notes
 
 - Swarm services are updated in-place (no deletion or downtime).
-- Standalone container updates are not destructive if rollback is used.
+- Standalone container updates are non-destructive if a rollback is used.
 - Docker Compose containers are detected but not updated directly — use `docker-compose pull && up -d` manually.
 
 ---
@@ -132,4 +132,4 @@ Run it:
 
 ## License
 
-MIT License. Modify and use freely with proper safety precautions.
+MIT License. 
